@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+
 import 'package:provider/provider.dart';
+
 import 'models/ip_model.dart';
+
 import 'providers/ping_provider.dart';
 
 void main() {
   runApp(
     ChangeNotifierProvider(
       create: (_) => PingProvider()..autoDiscover(),
+
       child: const QuickPingApp(),
     ),
   );
@@ -19,7 +23,9 @@ class QuickPingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'quickpingbycui707',
+
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+
       home: const HomePage(),
     );
   }
@@ -34,7 +40,34 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isGridMode = true; // 切换图形/列表模式
+  
+  late TextEditingController _timeoutController;
+  late TextEditingController _threadsController;
 
+  @override
+  void initState() {
+    super.initState();
+    
+    // 1. 获取 Provider 实例（不监听，仅读取）
+    final p = context.read<PingProvider>();
+
+    // 2. 初始化控制器，设置你想看到的默认值
+    _timeoutController = TextEditingController(text: "500"); // 默认1000ms
+    _threadsController = TextEditingController(text: "50");  // 默认100线程
+
+    // 3. 关键：同步给 Provider，这样不用输入也能直接点扫描
+    p.timeout = 1000;
+    p.threadCount = 100;
+  }
+
+  @override
+  void dispose() {
+    // 记得销毁控制器释放内存
+    _timeoutController.dispose();
+    _threadsController.dispose();
+    super.dispose();
+  }
+  
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PingProvider>();
@@ -42,24 +75,30 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('QuickPing (Flutter) - By Cui707'),
+
         actions: [
           IconButton(
             icon: Icon(isGridMode ? Icons.list : Icons.grid_view),
+
             onPressed: () => setState(() => isGridMode = !isGridMode),
+
             tooltip: isGridMode ? "切换到列表模式" : "切换到图形模式",
-          )
+          ),
         ],
       ),
+
       body: Column(
         children: [
           // 1. 参数设置区
           _buildHeader(provider),
-          
+
           // 2. 核心展示区 (根据模式切换)
           Expanded(
-            child: isGridMode ? _buildGridView(provider) : _buildListView(provider),
+            child: isGridMode
+                ? _buildGridView(provider)
+                : _buildListView(provider),
           ),
-          
+
           // 3. 底部状态栏与按钮
           _buildFooter(provider),
         ],
@@ -72,23 +111,33 @@ class _HomePageState extends State<HomePage> {
   Widget _buildHeader(PingProvider p) {
     return Container(
       padding: const EdgeInsets.all(10),
+
       color: Colors.grey[100],
+
       child: Wrap(
         spacing: 15,
+
         runSpacing: 10,
+
         crossAxisAlignment: WrapCrossAlignment.center,
+
         children: [
           const Text("超时(ms):"),
+
           SizedBox(width: 60, child: TextField(
+            controller: _timeoutController, // 绑定控制器
             decoration: const InputDecoration(isDense: true),
             keyboardType: TextInputType.number,
-            onChanged: (v) => p.timeout = int.tryParse(v) ?? 200,
+            onChanged: (v) => p.timeout = int.tryParse(v) ?? 500,
           )),
+
           const Text("线程:"),
+
           SizedBox(width: 60, child: TextField(
+            controller: _threadsController, // 绑定控制器
             decoration: const InputDecoration(isDense: true),
             keyboardType: TextInputType.number,
-            onChanged: (v) => p.threadCount = int.tryParse(v) ?? 20,
+            onChanged: (v) => p.threadCount = int.tryParse(v) ?? 50,
           )),
         ],
       ),
@@ -98,22 +147,31 @@ class _HomePageState extends State<HomePage> {
   Widget _buildGridView(PingProvider p) {
     return GridView.builder(
       padding: const EdgeInsets.all(5),
+
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 16, // 复刻截图的 16x16
+
         mainAxisSpacing: 2,
+
         crossAxisSpacing: 2,
       ),
+
       itemCount: p.tasks.length,
+
       itemBuilder: (context, index) {
         final task = p.tasks[index];
+
         return Container(
           decoration: BoxDecoration(
             color: task.statusColor,
+
             border: Border.all(color: Colors.black12, width: 0.5),
           ),
+
           child: Center(
             child: Text(
               '${task.lastOctet}',
+
               style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
             ),
           ),
@@ -125,26 +183,63 @@ class _HomePageState extends State<HomePage> {
   Widget _buildListView(PingProvider p) {
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
+
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+
         child: DataTable(
           headingRowHeight: 35,
+
           dataRowMinHeight: 25,
+
           dataRowMaxHeight: 30,
+
           columns: const [
             DataColumn(label: Text('IP地址')),
+
             DataColumn(label: Text('响应时间')),
+
             DataColumn(label: Text('主机名')),
+
             DataColumn(label: Text('返回信息')),
           ],
-          rows: p.tasks.map((task) => DataRow(
-            cells: [
-              DataCell(Text(task.ip, style: TextStyle(color: task.status == IpStatus.failed ? Colors.red : Colors.blue))),
-              DataCell(Text(task.latency != null ? "${task.latency}ms" : "-")),
-              DataCell(Text(task.hostname ?? "")),
-              DataCell(Text(task.message ?? "", style: TextStyle(fontSize: 12, color: task.statusColor == Colors.red ? Colors.red : Colors.black))),
-            ],
-          )).toList(),
+
+          rows: p.tasks
+              .map(
+                (task) => DataRow(
+                  cells: [
+                    DataCell(
+                      Text(
+                        task.ip,
+                        style: TextStyle(
+                          color: task.status == IpStatus.failed
+                              ? Colors.red
+                              : Colors.blue,
+                        ),
+                      ),
+                    ),
+
+                    DataCell(
+                      Text(task.latency != null ? "${task.latency}ms" : "-"),
+                    ),
+
+                    DataCell(Text(task.hostname ?? "")),
+
+                    DataCell(
+                      Text(
+                        task.message ?? "",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: task.statusColor == Colors.red
+                              ? Colors.red
+                              : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              .toList(),
         ),
       ),
     );
@@ -153,34 +248,60 @@ class _HomePageState extends State<HomePage> {
   Widget _buildFooter(PingProvider p) {
     return Container(
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: Colors.grey[300]!))),
+
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+      ),
+
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
+
         children: [
           ElevatedButton(
             onPressed: p.isScanning ? null : () => p.startScan(),
+
             child: const Text("开始扫描"),
           ),
+
           ElevatedButton(
-            onPressed: !p.isScanning ? null : () { /* 停止逻辑 */ },
+            onPressed: !p.isScanning
+                ? null
+                : () {
+                    /* 停止逻辑 */
+                  },
+
             child: const Text("停止"),
           ),
+
           ElevatedButton(
-            onPressed: p.isScanning ? null : () async {
-              String? path = await p.exportToExcel();
-              if (path != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("导出成功！保存在: $path"), backgroundColor: Colors.green),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("导出失败"), backgroundColor: Colors.red),
-                );
-              }
-            },
+            onPressed: p.isScanning
+                ? null
+                : () async {
+                    String? path = await p.exportToExcel();
+
+                    if (path != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("导出成功！保存在: $path"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("导出失败"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+
             child: const Text("保存 Excel"),
           ),
-          Text("响应数: ${p.tasks.where((t) => t.status == IpStatus.success).length}"),
+
+          Text(
+            "响应数: ${p.tasks.where((t) => t.status == IpStatus.success).length}",
+          ),
         ],
       ),
     );
