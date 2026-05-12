@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
-
+import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
-
 import 'models/ip_model.dart';
-
 import 'providers/ping_provider.dart';
 
-void main() {
+void main() async {
+
+// 1. 确保插件初始化
+  WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
+
+  // 2. 配置窗口选项
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(1000, 800),          // 设置启动时的默认大小
+    minimumSize: Size(800, 600),   // 设置窗口缩小的下限，防止底部被遮挡
+    center: true,                  // 居中显示
+    title: "QuickPing - By Cui707",
+  );
+
+  // 3. 应用并显示窗口
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => PingProvider()..autoDiscover(),
@@ -145,35 +162,57 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGridView(PingProvider p) {
-    return GridView.builder(
-      padding: const EdgeInsets.all(5),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 1. 定义行列数
+        const int crossAxisCount = 16;
+        const int rowCount = 16;
 
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 16, // 复刻截图的 16x16
+        // 2. 定义间距（需与下方 Delegate 中的 spacing 一致）
+        const double spacing = 2.0;
+        const double totalPadding = 10.0; // 左右总边距 (5+5)
 
-        mainAxisSpacing: 2,
+        // 3. 计算可用宽高
+        // 减去总边距和所有格子之间的间距
+        double availableWidth = constraints.maxWidth - totalPadding - (spacing * (crossAxisCount - 1));
+        double availableHeight = constraints.maxHeight - totalPadding - (spacing * (rowCount - 1));
 
-        crossAxisSpacing: 2,
-      ),
+        // 确保高度不为负数（防御性编程）
+        if (availableHeight <= 0) availableHeight = 10;
 
-      itemCount: p.tasks.length,
-
-      itemBuilder: (context, index) {
-        final task = p.tasks[index];
+        // 4. 计算单个格子的宽高，并求出比例
+        double cellWidth = availableWidth / crossAxisCount;
+        double cellHeight = availableHeight / rowCount;
+        double dynamicAspectRatio = cellWidth / cellHeight;
 
         return Container(
-          decoration: BoxDecoration(
-            color: task.statusColor,
-
-            border: Border.all(color: Colors.black12, width: 0.5),
-          ),
-
-          child: Center(
-            child: Text(
-              '${task.lastOctet}',
-
-              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+          padding: const EdgeInsets.all(5), // 这里的 5 对应上面的 totalPadding/2
+          color: Colors.white, // 设置背景色方便观察边界
+          child: GridView.builder(
+            // 强制禁用滚动，确保格子在当前 Expanded 区域内缩放
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              mainAxisSpacing: spacing,
+              crossAxisSpacing: spacing,
+              childAspectRatio: dynamicAspectRatio, // 关键：应用精确比例
             ),
+            itemCount: p.tasks.length,
+            itemBuilder: (context, index) {
+              final task = p.tasks[index];
+              return Container(
+                decoration: BoxDecoration(
+                  color: task.statusColor,
+                  border: Border.all(color: Colors.black12, width: 0.5),
+                ),
+                child: Center(
+                  child: Text(
+                    '${task.lastOctet}',
+                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            },
           ),
         );
       },
