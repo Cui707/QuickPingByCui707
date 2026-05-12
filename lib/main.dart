@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QuickPing (Flutter) - By Cui707'),
+        title: const Text('QuickPing - By Cui707'),
 
         actions: [
           IconButton(
