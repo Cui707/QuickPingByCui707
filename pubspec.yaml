@@ -37,6 +37,7 @@ dependencies:
   path_provider: ^2.1.3
   path: ^1.9.0
   window_manager: ^0.2.0
+  flutter_launcher_icons: "^0.13.1"
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -94,3 +95,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_launcher_icons:
+  android: true        # 为 Android 平台生成图标
+  ios: false           # 如果不需要 iOS 图标可以设置为 false
+  image_path: "assets/app_icon.png" # 替换为你的图标路径
+  windows:
+    generate: true     # 为 Windows 平台生成图标
+    image_path: "assets/app_icon.png" # 替换为你的图标路径（logo.png）
+    icon_size: 48      # 可选：Windows 图标的尺寸，通常保持默认或根据需要调整

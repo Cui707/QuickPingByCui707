@@ -46,18 +46,21 @@ class PingProvider with ChangeNotifier {
     int activeThreads = 0;
     int index = 0;
 
-    // 递归执行器：保持固定数量的任务运行
     Future<void> runNext() async {
       if (index >= queue.length) return;
       
       IpTask task = queue[index++];
       task.status = IpStatus.scanning;
-      notifyListeners();
+      notifyListeners(); // 界面变黄
 
+      // 执行原生 Ping
       await PingService.quickPing(task, timeout);
-      notifyListeners();
+
+      // 这里不需要再写逻辑，因为上面的 quickPing 已经修改了 task.status
+      // 我们只需要通知 UI：已经从 scanning 变成成功或失败了
+      notifyListeners(); 
       
-      await runNext(); // 继续处理下一个
+      await runNext();
     }
 
     // 启动初始线程池

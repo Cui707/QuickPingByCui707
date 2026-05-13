@@ -338,8 +338,10 @@ class _HomePageState extends State<HomePage> {
             child: const Text("保存 Excel"),
           ),
 
+          // 在 _buildFooter 的 Text 中
           Text(
-            "响应数: ${p.tasks.where((t) => t.status == IpStatus.success).length}",
+            "响应数: ${p.tasks.where((t) => t.status == IpStatus.success || t.status == IpStatus.local).length}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ],
       ),

@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter/Dart/Pub related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# 自定义忽略目录
+/flutter_pub_cache/
+# pubspec.lock  <-- 建议注释掉或删除，App项目建议跟踪此文件
