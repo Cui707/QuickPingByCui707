@@ -79,8 +79,8 @@ void main() {
       expect(provider.subnetPrefix, '192.168.1');
       expect(provider.tasks.length, 256);
       expect(provider.isScanning, false);
-      expect(provider.threadCount, 20);
-      expect(provider.timeout, 200);
+      expect(provider.threadCount, 255);
+      expect(provider.timeout, 1000);
     });
 
     test('all initial tasks are idle', () {

@@ -11,8 +11,8 @@ import 'package:path/path.dart' as p;
 class PingProvider with ChangeNotifier {
   List<IpTask> tasks = [];
   bool isScanning = false;
-  int threadCount = 20;
-  int timeout = 200;
+  int threadCount = 255;
+  int timeout = 1000;
   String subnetPrefix = "192.168.1";
   String? localIp;
 

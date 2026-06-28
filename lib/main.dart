@@ -71,13 +71,13 @@ class _HomePageState extends State<HomePage> {
     _provider = context.read<PingProvider>();
 
     // 2. 初始化控制器，设置你想看到的默认值
-    _timeoutController = TextEditingController(text: "500"); // 默认1000ms
-    _threadsController = TextEditingController(text: "50");  // 默认100线程
+    _timeoutController = TextEditingController(text: "1000");
+    _threadsController = TextEditingController(text: "255");
     _subnetController = TextEditingController(text: _provider.subnetPrefix);
 
     // 3. 关键：同步给 Provider，这样不用输入也能直接点扫描
     _provider.timeout = 1000;
-    _provider.threadCount = 100;
+    _provider.threadCount = 255;
     _provider.addListener(_onProviderChanged);
   }
 
@@ -222,6 +222,11 @@ class _HomePageState extends State<HomePage> {
         double cellHeight = availableHeight / rowCount;
         double dynamicAspectRatio = cellWidth / cellHeight;
 
+        // 5. 根据单元格大小动态计算字号（取宽高中较小者的 22%，限制在 7~18 之间）
+        double dynamicFontSize = (cellWidth < cellHeight ? cellWidth : cellHeight) * 0.22;
+        if (dynamicFontSize < 7) dynamicFontSize = 7;
+        if (dynamicFontSize > 18) dynamicFontSize = 18;
+
         return Container(
           padding: const EdgeInsets.all(5), // 这里的 5 对应上面的 totalPadding/2
           color: Colors.white, // 设置背景色方便观察边界
@@ -243,10 +248,10 @@ class _HomePageState extends State<HomePage> {
                   border: Border.all(color: Colors.black12, width: 0.5),
                 ),
                 child: Center(
-                  child: Text(
-                    '${task.lastOctet}',
-                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
-                  ),
+                    child: Text(
+                      '${task.lastOctet}',
+                      style: TextStyle(fontSize: dynamicFontSize, fontWeight: FontWeight.bold),
+                    ),
                 ),
               );
             },
