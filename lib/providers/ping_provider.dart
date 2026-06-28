@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/ip_model.dart';
 import '../services/ping_service.dart';
 import '../utils/network_util.dart';
+import '../utils/oui_db.dart';
 import 'dart:io';
 import 'package:excel/excel.dart';
 import '../utils/file_helper.dart';
@@ -104,8 +105,66 @@ class PingProvider with ChangeNotifier {
     }
 
     await Future.wait(threads);
+
+    // 扫描后丰富信息：ARP 获取 MAC + 厂商，NetBIOS 获取 Windows 主机名
+    await _enrichTasks();
+
     isScanning = false;
     notifyListeners();
+  }
+
+  /// 扫描后通过 ARP / NetBIOS 丰富设备信息
+  Future<void> _enrichTasks() async {
+    final arpTable = await PingService.resolveArpTable();
+
+    // 并行执行的 NetBIOS 查询
+    final List<Future> nbtFutures = [];
+
+    for (var task in tasks) {
+      if (task.status != IpStatus.success && task.status != IpStatus.local) {
+        continue;
+      }
+
+      // 从 ARP 表中获取 MAC 地址
+      final mac = arpTable[task.ip];
+      if (mac != null) {
+        task.macAddress = mac;
+        final vendor = lookupOui(mac);
+        if (vendor != null) {
+          task.deviceType = _refineDeviceType(task, vendor);
+        }
+      }
+
+      // 没有主机名的 Windows 类设备，尝试 NetBIOS
+      if (task.hostname == null && task.deviceType == 'Windows') {
+        nbtFutures.add(_resolveAndSetNetBios(task));
+      }
+    }
+
+    if (nbtFutures.isNotEmpty) {
+      await Future.wait(nbtFutures);
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> _resolveAndSetNetBios(IpTask task) async {
+    final name = await PingService.resolveNetBiosName(task.ip);
+    if (name != null && name.isNotEmpty) {
+      task.hostname = name;
+    }
+  }
+
+  String _refineDeviceType(IpTask task, String vendor) {
+    final ttlHint = task.deviceType ?? '';
+    if (vendor == 'Apple') return 'Apple';
+    final cat = classifyVendor(vendor);
+    if (cat == 'Android' && ttlHint.contains('Linux')) return 'Android ($vendor)';
+    if (cat == 'Router') return 'Router ($vendor)';
+    if (cat == 'IoT') return 'IoT ($vendor)';
+    if (cat == 'PC' && ttlHint.contains('Linux')) return 'Linux ($vendor)';
+    if (cat == 'PC' && ttlHint.contains('Windows')) return 'Windows ($vendor)';
+    return ttlHint;
   }
     Future<String?> exportToExcel() async {
     var excel = Excel.createExcel();
@@ -116,6 +175,8 @@ class PingProvider with ChangeNotifier {
       TextCellValue('IP地址'),
       TextCellValue('状态'),
       TextCellValue('响应时间(ms)'),
+      TextCellValue('MAC地址'),
+      TextCellValue('设备信息'),
       TextCellValue('主机名'),
       TextCellValue('返回信息')
     ]);
@@ -126,6 +187,8 @@ class PingProvider with ChangeNotifier {
         TextCellValue(task.ip),
         TextCellValue(task.status.name),
         IntCellValue(task.latency ?? 0),
+        TextCellValue(task.macAddress ?? ""),
+        TextCellValue(task.deviceType ?? ""),
         TextCellValue(task.hostname ?? ""),
         TextCellValue(task.message ?? ""),
       ]);

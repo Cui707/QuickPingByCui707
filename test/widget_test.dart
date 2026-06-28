@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:quickpingbycui707/main.dart';
+import 'package:quickpingbycui707/models/ip_model.dart';
 import 'package:quickpingbycui707/providers/ping_provider.dart';
 
 void main() {
@@ -62,6 +63,32 @@ void main() {
       await tester.pump();
 
       expect(find.byIcon(Icons.refresh), findsOneWidget);
+    });
+
+    testWidgets('list view shows MAC and device info columns', (tester) async {
+      final provider = PingProvider();
+      provider.tasks[0]
+        ..status = IpStatus.success
+        ..latency = 5
+        ..macAddress = 'AA-BB-CC-DD-EE-FF'
+        ..deviceType = 'Android (Samsung)';
+      provider.tasks[1]
+        ..status = IpStatus.success
+        ..latency = 2
+        ..macAddress = '11-22-33-44-55-66'
+        ..deviceType = 'Router (TP-Link)';
+
+      await tester.pumpWidget(buildTestApp(provider: provider));
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.list));
+      await tester.pump();
+
+      expect(find.text('MAC地址'), findsOneWidget);
+      expect(find.text('设备信息'), findsOneWidget);
+      expect(find.text('AA-BB-CC-DD-EE-FF'), findsOneWidget);
+      expect(find.text('Android (Samsung)'), findsOneWidget);
+      expect(find.text('Router (TP-Link)'), findsOneWidget);
     });
   });
 }

@@ -275,7 +275,9 @@ class _HomePageState extends State<HomePage> {
 
             DataColumn(label: Text('响应时间')),
 
-            DataColumn(label: Text('主机名')),
+            DataColumn(label: Text('MAC地址')),
+
+            DataColumn(label: Text('设备信息')),
 
             DataColumn(label: Text('返回信息')),
           ],
@@ -299,7 +301,9 @@ class _HomePageState extends State<HomePage> {
                       Text(task.latency != null ? "${task.latency}ms" : "-"),
                     ),
 
-                    DataCell(Text(task.hostname ?? "")),
+                    DataCell(Text(task.macAddress ?? "-")),
+
+                    DataCell(Text(task.deviceType ?? "")),
 
                     DataCell(
                       Text(

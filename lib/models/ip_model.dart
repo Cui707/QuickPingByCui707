@@ -10,6 +10,7 @@ class IpTask {
   String? hostname;         // 主机名
   String? macAddress;       // 网卡地址
   String? message;          // 返回信息或错误提示
+  String? deviceType;       // 设备类型 (Windows / Linux / Router 等)
 
   IpTask({
     required this.ip,
@@ -19,6 +20,7 @@ class IpTask {
     this.hostname,
     this.macAddress,
     this.message,
+    this.deviceType,
   });
 
   // 获取状态对应的 UI 颜色
