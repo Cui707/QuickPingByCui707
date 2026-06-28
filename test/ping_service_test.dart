@@ -119,6 +119,19 @@ void main() {
       expect(task.status, IpStatus.success);
       expect(task.latency, 1);
     });
+
+    test('resolveDetails=false skips hostname and device type', () {
+      final task = IpTask(ip: '192.168.1.1', lastOctet: 1);
+      const output = 'Pinging router.asus.com [192.168.1.1] with 32 bytes of data:\n'
+          'Reply from 192.168.1.1: bytes=32 time=1ms TTL=64\n';
+
+      PingService.parsePingOutput(task, output, 0, resolveDetails: false);
+
+      expect(task.status, IpStatus.success);
+      expect(task.latency, 1);
+      expect(task.hostname, isNull);
+      expect(task.deviceType, isNull);
+    });
   });
 
   group('PingService.classifyDeviceType', () {

@@ -30,6 +30,7 @@ void main() {
 
       expect(find.text('超时(ms):'), findsOneWidget);
       expect(find.text('线程:'), findsOneWidget);
+      expect(find.text('详细信息:'), findsOneWidget);
       expect(find.text('开始扫描'), findsOneWidget);
       expect(find.text('保存 Excel'), findsOneWidget);
     });
@@ -89,6 +90,26 @@ void main() {
       expect(find.text('AA-BB-CC-DD-EE-FF'), findsOneWidget);
       expect(find.text('Android (Samsung)'), findsOneWidget);
       expect(find.text('Router (TP-Link)'), findsOneWidget);
+    });
+
+    testWidgets('detailed mode switch defaults off', (tester) async {
+      final provider = PingProvider();
+      await tester.pumpWidget(buildTestApp(provider: provider));
+      await tester.pump();
+
+      expect(provider.detailedMode, false);
+      expect(find.byType(Switch), findsOneWidget);
+    });
+
+    testWidgets('toggling detailed mode updates provider', (tester) async {
+      final provider = PingProvider();
+      await tester.pumpWidget(buildTestApp(provider: provider));
+      await tester.pump();
+
+      await tester.tap(find.byType(Switch));
+      await tester.pump();
+
+      expect(provider.detailedMode, true);
     });
   });
 }

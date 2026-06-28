@@ -13,6 +13,7 @@ class PingProvider with ChangeNotifier {
   bool isScanning = false;
   int threadCount = 255;
   int timeout = 1000;
+  bool detailedMode = false;
   String subnetPrefix = "192.168.1";
   String? localIp;
 
@@ -55,6 +56,12 @@ class PingProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// 切换详细信息模式
+  void toggleDetailedMode(bool value) {
+    detailedMode = value;
+    notifyListeners();
+  }
+
   void _generateTasks() {
     tasks = List.generate(256, (i) {
       String currentIp = "$subnetPrefix.$i";
@@ -89,7 +96,7 @@ class PingProvider with ChangeNotifier {
       notifyListeners(); // 界面变黄
 
       // 执行原生 Ping
-      await PingService.quickPing(task, timeout);
+      await PingService.quickPing(task, timeout, resolveDetails: detailedMode);
 
       // 这里不需要再写逻辑，因为上面的 quickPing 已经修改了 task.status
       // 我们只需要通知 UI：已经从 scanning 变成成功或失败了
@@ -106,8 +113,10 @@ class PingProvider with ChangeNotifier {
 
     await Future.wait(threads);
 
-    // 扫描后丰富信息：ARP 获取 MAC + 厂商，NetBIOS 获取 Windows 主机名
-    await _enrichTasks();
+    // 详细信息模式：获取 ARP MAC + NetBIOS 主机名
+    if (detailedMode) {
+      await _enrichTasks();
+    }
 
     isScanning = false;
     notifyListeners();

@@ -193,6 +193,17 @@ class _HomePageState extends State<HomePage> {
             keyboardType: TextInputType.number,
             onChanged: (v) => p.threadCount = int.tryParse(v) ?? 50,
           )),
+
+          const Text("详细信息:"),
+
+          SizedBox(
+            height: 28,
+            child: Switch(
+              value: p.detailedMode,
+              onChanged: (v) => p.toggleDetailedMode(v),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
         ],
       ),
     );

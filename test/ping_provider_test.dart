@@ -89,5 +89,25 @@ void main() {
         expect(task.status, IpStatus.idle);
       }
     });
+
+    test('detailedMode defaults to false', () {
+      final provider = PingProvider();
+      expect(provider.detailedMode, false);
+    });
+  });
+
+  group('PingProvider.toggleDetailedMode', () {
+    test('toggles detailedMode on', () {
+      final provider = PingProvider();
+      provider.toggleDetailedMode(true);
+      expect(provider.detailedMode, true);
+    });
+
+    test('toggles detailedMode off', () {
+      final provider = PingProvider();
+      provider.toggleDetailedMode(true);
+      provider.toggleDetailedMode(false);
+      expect(provider.detailedMode, false);
+    });
   });
 }

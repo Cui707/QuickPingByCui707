@@ -4,16 +4,16 @@ import '../utils/oui_db.dart';
 
 class PingService {
   /// 使用系统原生进程执行 Ping，最稳健的方式
-  /// -a 参数启用反向 DNS 解析以获取主机名
-  static Future<void> quickPing(IpTask task, int timeoutMs) async {
+  /// [resolveDetails] 为 true 时启用 -a 反向 DNS 解析
+  static Future<void> quickPing(IpTask task, int timeoutMs, {bool resolveDetails = false}) async {
     try {
-      final result = await Process.run(
-        'ping',
-        ['-n', '1', '-a', '-w', timeoutMs.toString(), task.ip],
-        runInShell: true,
-      );
+      final args = <String>[];
+      if (resolveDetails) args.add('-a');
+      args.addAll(['-n', '1', '-w', timeoutMs.toString(), task.ip]);
 
-      parsePingOutput(task, result.stdout.toString(), result.exitCode);
+      final result = await Process.run('ping', args, runInShell: true);
+
+      parsePingOutput(task, result.stdout.toString(), result.exitCode, resolveDetails: resolveDetails);
     } catch (e) {
       task.status = IpStatus.failed;
       task.message = "进程错误: $e";
@@ -21,7 +21,8 @@ class PingService {
   }
 
   /// 解析 ping 输出，提取延迟、主机名、设备类型等信息
-  static void parsePingOutput(IpTask task, String output, int exitCode) {
+  /// [resolveDetails] 为 false 时仅判断通断和延迟，不做主机名/设备类型解析
+  static void parsePingOutput(IpTask task, String output, int exitCode, {bool resolveDetails = true}) {
     if (exitCode == 0 && output.contains('TTL=')) {
       task.status = IpStatus.success;
 
@@ -32,8 +33,10 @@ class PingService {
         task.latency = 1;
       }
 
-      _parseHostname(task, output);
-      _parseDeviceType(task, output);
+      if (resolveDetails) {
+        _parseHostname(task, output);
+        _parseDeviceType(task, output);
+      }
 
       task.message = "回复成功";
     } else {
