@@ -308,7 +308,9 @@ class _HomePageState extends State<HomePage> {
                         style: TextStyle(
                           color: task.status == IpStatus.failed
                               ? Colors.red
-                              : Colors.blue,
+                              : task.status == IpStatus.local
+                                  ? Colors.green
+                                  : Colors.blue,
                         ),
                       ),
                     ),

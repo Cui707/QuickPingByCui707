@@ -69,10 +69,10 @@ void main() {
     testWidgets('list view shows MAC and device info columns', (tester) async {
       final provider = PingProvider();
       provider.tasks[0]
-        ..status = IpStatus.success
-        ..latency = 5
+        ..status = IpStatus.local
+        ..latency = 0
         ..macAddress = 'AA-BB-CC-DD-EE-FF'
-        ..deviceType = 'Android (Samsung)';
+        ..deviceType = '本机';
       provider.tasks[1]
         ..status = IpStatus.success
         ..latency = 2
@@ -88,7 +88,7 @@ void main() {
       expect(find.text('MAC地址'), findsOneWidget);
       expect(find.text('设备信息'), findsOneWidget);
       expect(find.text('AA-BB-CC-DD-EE-FF'), findsOneWidget);
-      expect(find.text('Android (Samsung)'), findsOneWidget);
+      expect(find.text('本机'), findsOneWidget);
       expect(find.text('Router (TP-Link)'), findsOneWidget);
     });
 
@@ -117,7 +117,6 @@ void main() {
       await tester.pumpWidget(buildTestApp(provider: provider));
       await tester.pump();
 
-      // 未扫描时停止按钮应禁用（onPressed 为 null）
       final stopButton = find.text('停止');
       expect(stopButton, findsOneWidget);
       final stopWidget = tester.widget<ElevatedButton>(
@@ -125,7 +124,6 @@ void main() {
       );
       expect(stopWidget.onPressed, isNull);
 
-      // 模拟正在扫描
       provider.isScanning = true;
       provider.notifyListeners();
       await tester.pump();

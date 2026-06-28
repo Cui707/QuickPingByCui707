@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:network_info_plus/network_info_plus.dart';
 
 class NetworkUtil {
@@ -14,16 +15,31 @@ class NetworkUtil {
 
   /// 获取当前网段前缀，例如 "192.168.1"
   static Future<String?> getLocalSubnetPrefix() async {
-    final info = NetworkInfo();
-    String? ip = await info.getWifiIP();
+    final ip = await getLocalIP();
     if (ip != null) {
       return extractSubnetPrefix(ip);
     }
     return null;
   }
 
-  /// 获取本机完整 IP
+  /// 获取本机完整 IP（WiFi优先，回退到 NetworkInterface）
   static Future<String?> getLocalIP() async {
-    return await NetworkInfo().getWifiIP();
+    try {
+      final wifiIp = await NetworkInfo().getWifiIP();
+      if (wifiIp != null && wifiIp.isNotEmpty) return wifiIp;
+    } catch (_) {}
+
+    try {
+      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4);
+      for (var iface in interfaces) {
+        for (var addr in iface.addresses) {
+          if (!addr.isLoopback && addr.address.contains('.')) {
+            return addr.address;
+          }
+        }
+      }
+    } catch (_) {}
+
+    return null;
   }
 }
