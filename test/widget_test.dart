@@ -111,5 +111,29 @@ void main() {
 
       expect(provider.detailedMode, true);
     });
+
+    testWidgets('stop button is enabled when scanning', (tester) async {
+      final provider = PingProvider();
+      await tester.pumpWidget(buildTestApp(provider: provider));
+      await tester.pump();
+
+      // 未扫描时停止按钮应禁用（onPressed 为 null）
+      final stopButton = find.text('停止');
+      expect(stopButton, findsOneWidget);
+      final stopWidget = tester.widget<ElevatedButton>(
+        find.ancestor(of: stopButton, matching: find.byType(ElevatedButton)).last,
+      );
+      expect(stopWidget.onPressed, isNull);
+
+      // 模拟正在扫描
+      provider.isScanning = true;
+      provider.notifyListeners();
+      await tester.pump();
+
+      final stopWidget2 = tester.widget<ElevatedButton>(
+        find.ancestor(of: stopButton, matching: find.byType(ElevatedButton)).last,
+      );
+      expect(stopWidget2.onPressed, isNotNull);
+    });
   });
 }

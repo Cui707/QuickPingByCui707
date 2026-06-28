@@ -362,10 +362,7 @@ class _HomePageState extends State<HomePage> {
           ElevatedButton(
             onPressed: !p.isScanning
                 ? null
-                : () {
-                    /* 停止逻辑 */
-                  },
-
+                : () => p.stopScan(),
             child: const Text("停止"),
           ),
 

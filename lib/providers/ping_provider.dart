@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 class PingProvider with ChangeNotifier {
   List<IpTask> tasks = [];
   bool isScanning = false;
+  bool _cancelRequested = false;
   int threadCount = 255;
   int timeout = 1000;
   bool detailedMode = false;
@@ -77,6 +78,7 @@ class PingProvider with ChangeNotifier {
   Future<void> startScan() async {
     if (isScanning) return;
     isScanning = true;
+    _cancelRequested = false;
     notifyListeners();
 
     // 重置非本机状态
@@ -85,21 +87,17 @@ class PingProvider with ChangeNotifier {
     }
 
     final List<IpTask> queue = List.from(tasks.where((t) => t.status != IpStatus.local));
-    int activeThreads = 0;
     int index = 0;
 
     Future<void> runNext() async {
-      if (index >= queue.length) return;
+      if (_cancelRequested || index >= queue.length) return;
       
       IpTask task = queue[index++];
       task.status = IpStatus.scanning;
-      notifyListeners(); // 界面变黄
+      notifyListeners();
 
-      // 执行原生 Ping
       await PingService.quickPing(task, timeout, resolveDetails: detailedMode);
 
-      // 这里不需要再写逻辑，因为上面的 quickPing 已经修改了 task.status
-      // 我们只需要通知 UI：已经从 scanning 变成成功或失败了
       notifyListeners(); 
       
       await runNext();
@@ -113,12 +111,17 @@ class PingProvider with ChangeNotifier {
 
     await Future.wait(threads);
 
-    // 详细信息模式：获取 ARP MAC + NetBIOS 主机名
-    if (detailedMode) {
+    if (detailedMode && !_cancelRequested) {
       await _enrichTasks();
     }
 
     isScanning = false;
+    notifyListeners();
+  }
+
+  /// 停止扫描
+  void stopScan() {
+    _cancelRequested = true;
     notifyListeners();
   }
 

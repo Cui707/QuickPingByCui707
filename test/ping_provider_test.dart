@@ -110,4 +110,12 @@ void main() {
       expect(provider.detailedMode, false);
     });
   });
+
+  group('PingProvider.stopScan', () {
+    test('stopScan does not throw when not scanning', () {
+      final provider = PingProvider();
+      provider.stopScan();
+      expect(provider.isScanning, false);
+    });
+  });
 }
