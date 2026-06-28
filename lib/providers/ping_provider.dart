@@ -12,23 +12,57 @@ class PingProvider with ChangeNotifier {
   bool isScanning = false;
   int threadCount = 20;
   int timeout = 200;
+  String subnetPrefix = "192.168.1";
+  String? localIp;
+
+  PingProvider() {
+    _generateTasks();
+  }
+
+  static bool isValidSubnetPrefix(String prefix) {
+    final parts = prefix.split('.');
+    if (parts.length != 3) return false;
+    for (var part in parts) {
+      final n = int.tryParse(part);
+      if (n == null || n < 0 || n > 255) return false;
+    }
+    return true;
+  }
 
   /// 初始化并自动探测网段
   Future<void> autoDiscover() async {
-    String? prefix = await NetworkUtil.getLocalSubnetPrefix();
-    String? localIp = await NetworkUtil.getLocalIP();
-    
-    prefix ??= "192.168.1"; // 默认 fallback
-    
+    try {
+      String? prefix = await NetworkUtil.getLocalSubnetPrefix();
+      localIp = await NetworkUtil.getLocalIP();
+
+      if (prefix != null && prefix.isNotEmpty) {
+        subnetPrefix = prefix;
+      }
+    } catch (_) {
+      // keep default subnetPrefix
+    }
+    _generateTasks();
+    notifyListeners();
+  }
+
+  /// 手动修改网段
+  void changeSubnet(String newPrefix) {
+    if (!isValidSubnetPrefix(newPrefix)) return;
+    subnetPrefix = newPrefix;
+    localIp = null;
+    _generateTasks();
+    notifyListeners();
+  }
+
+  void _generateTasks() {
     tasks = List.generate(256, (i) {
-      String currentIp = "$prefix.$i";
+      String currentIp = "$subnetPrefix.$i";
       return IpTask(
         ip: currentIp,
         lastOctet: i,
         status: (currentIp == localIp) ? IpStatus.local : IpStatus.idle,
       );
     });
-    notifyListeners();
   }
 
   /// 并发扫描（任务池模式）

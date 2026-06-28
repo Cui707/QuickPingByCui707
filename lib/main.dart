@@ -57,31 +57,43 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isGridMode = true; // 切换图形/列表模式
-  
+   
   late TextEditingController _timeoutController;
   late TextEditingController _threadsController;
+  late TextEditingController _subnetController;
+  late PingProvider _provider;
 
   @override
   void initState() {
     super.initState();
     
     // 1. 获取 Provider 实例（不监听，仅读取）
-    final p = context.read<PingProvider>();
+    _provider = context.read<PingProvider>();
 
     // 2. 初始化控制器，设置你想看到的默认值
     _timeoutController = TextEditingController(text: "500"); // 默认1000ms
     _threadsController = TextEditingController(text: "50");  // 默认100线程
+    _subnetController = TextEditingController(text: _provider.subnetPrefix);
 
     // 3. 关键：同步给 Provider，这样不用输入也能直接点扫描
-    p.timeout = 1000;
-    p.threadCount = 100;
+    _provider.timeout = 1000;
+    _provider.threadCount = 100;
+    _provider.addListener(_onProviderChanged);
+  }
+
+  void _onProviderChanged() {
+    if (_subnetController.text != _provider.subnetPrefix) {
+      _subnetController.text = _provider.subnetPrefix;
+    }
   }
 
   @override
   void dispose() {
     // 记得销毁控制器释放内存
+    _provider.removeListener(_onProviderChanged);
     _timeoutController.dispose();
     _threadsController.dispose();
+    _subnetController.dispose();
     super.dispose();
   }
   
@@ -139,6 +151,31 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: WrapCrossAlignment.center,
 
         children: [
+          const Text("网段:"),
+
+          SizedBox(
+            width: 130,
+            child: TextField(
+              controller: _subnetController,
+              decoration: InputDecoration(
+                isDense: true,
+                errorText: PingProvider.isValidSubnetPrefix(_subnetController.text)
+                    ? null
+                    : "格式: xxx.xxx.xxx",
+              ),
+              keyboardType: TextInputType.text,
+              onChanged: (v) => p.changeSubnet(v),
+            ),
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.refresh, size: 20),
+            onPressed: () => p.autoDiscover(),
+            tooltip: "重新探测网段",
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+
           const Text("超时(ms):"),
 
           SizedBox(width: 60, child: TextField(
