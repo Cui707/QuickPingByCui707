@@ -1,5 +1,10 @@
-# QuickpingByCui707
+QuickPingByCui707 是一款 Windows 桌面 IP 扫描工具，用于快速检测局域网内哪些 IP 地址在线。
 
-快速自动化扫描网段内255个ip能否ping通。
+核心功能：
 
-可切换为详细模式，获取ping通设备的MAC地址/主机名/设备类型等信息。
+一键扫描 — 自动识别当前网段，255 线程并发 ping 256 个 IP，秒级完成全网检测
+双视图切换 — 网格模式（16×16 色块直观展示通断状态）和列表模式（详细数据表格）
+快速/详细模式 — 快速模式纯测通断；详细模式通过 ARP 获取 MAC 地址，内置 500+ OUI 数据库识别设备厂商（Samsung/Xiaomi/Apple/Intel/TP-Link 等），自动分类为 Android、Linux、Windows、Apple、Router 等
+手动网段 — 支持输入任意 /24 网段进行扫描
+结果导出 — 一键保存为 Excel 文件
+本机 IP 绿色高亮，自适应窗口字号，停止扫描随时中断。
